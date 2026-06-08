@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Bloom — SPM Planner</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ─── VARIABLES ─── */
+:root {
+  --pk1:#FCE4EC; --pk2:#F8BBD0; --pk3:#F48FB1;
+  --pk4:#F06292; --pk5:#E91E8C; --pk6:#C2185B;
+  --white:#FFFFFF; --off:#FFF5F8; --surface:#FAFAFA;
+  --b100:#F3F3F3; --b200:#E8E8E8; --b300:#D4D4D4;
+  --t1:#1A1A1A; --t2:#666666; --t3:#AAAAAA;
+  --r:16px; --rsm:10px;
+  --navH:64px; --safe:env(safe-area-inset-bottom,0px);
+  --sh:0 2px 12px rgba(233,30,140,.08),0 1px 3px rgba(0,0,0,.04);
+  --shm:0 6px 28px rgba(233,30,140,.14),0 2px 8px rgba(0,0,0,.06);
+  --fd:'Playfair Display',serif;
+  --fb:'Nunito',system-ui,sans-serif;
+}
+.dk {
+  --white:#1E0D16; --off:#180A12; --surface:#221018;
+  --b100:#2E1520; --b200:#3A1C2A; --b300:#4F2838;
+  --t1:#FAF0F5; --t2:#C090A8; --t3:#7A4060;
+  --pk1:#2A1020; --pk2:#331528; --sh:0 2px 12px rgba(0,0,0,.3);
+}
+
+/* ─── RESET ─── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;overscroll-behavior:none}
+body{font-family:var(--fb);background:var(--off);color:var(--t1);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;transition:background .3s,color .3s}
+
+/* ─── SHELL ─── */
+#app{display:flex;flex-direction:column;height:100dvh;max-width:430px;margin:0 auto;background:var(--off);position:relative;overflow:hidden;transition:background .3s}
+@media(min-width:432px){#app{box-shadow:0 0 60px rgba(0,0,0,.2)}}
+
+/* ─── PAGES ─── */
+.pages{flex:1;overflow:hidden;position:relative}
+.page{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding-bottom:calc(var(--navH) + var(--safe) + 20px);opacity:0;transform:translateY(10px);pointer-events:none;transition:opacity .22s ease,transform .22s ease;-webkit-overflow-scrolling:touch}
+.page.active{opacity:1;transform:translateY(0);pointer-events:auto}
+.page::-webkit-scrollbar{display:none}
+
+/* ─── BOTTOM NAV ─── */
+.bnav{height:var(--navH);background:var(--white);border-top:1px solid var(--b200);display:flex;align-items:center;padding:0 4px;padding-bottom:var(--safe);flex-shrink:0;transition:background .3s,border-color .3s}
+.nbtn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;border:none;background:transparent;cursor:pointer;padding:8px 4px;font-family:var(--fb);color:var(--t3);transition:color .18s;-webkit-tap-highlight-color:transparent}
+.nbtn.active{color:var(--pk5)}
+.nbtn .nico{font-size:22px;line-height:1;transition:transform .18s}
+.nbtn.active .nico{transform:scale(1.12)}
+.nbtn .nlb{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+
+/* ─── PAGE HEADER ─── */
+.ph{padding:20px 18px 0;background:var(--off);position:sticky;top:0;z-index:30;transition:background .3s}
+.ph-title{font-family:var(--fd);font-size:27px;font-weight:600;color:var(--t1);letter-spacing:-.3px;line-height:1.2}
+.ph-title i{color:var(--pk5);font-style:italic}
+.ph-sub{font-size:12.5px;color:var(--t2);margin-top:3px;padding-bottom:14px;border-bottom:1px solid var(--b200)}
+
+/* ─── COUNTDOWN PAGE ─── */
+.cd-wrap{padding:16px 16px 0}
+
+.hero{background:linear-gradient(140deg,#FFF0F5,#FCE4EC);border:1.5px solid var(--pk2);border-radius:22px;padding:24px 20px 20px;box-shadow:var(--shm);position:relative;overflow:hidden;margin-bottom:14px}
+.hero::after{content:'🌸';position:absolute;bottom:10px;right:16px;font-size:38px;opacity:.15;pointer-events:none}
+.dk .hero{background:linear-gradient(140deg,#2A1020,#200D18);border-color:var(--b300)}
+
+.hero-label{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--pk5);margin-bottom:16px;display:flex;align-items:center;gap:6px}
+.hero-label::before{content:'';width:18px;height:2px;background:var(--pk4);border-radius:1px}
+
+/* COUNTDOWN DIGITS */
+.cd-digits{display:flex;align-items:flex-start;justify-content:center;gap:6px;margin-bottom:18px}
+.cd-unit{text-align:center;flex:1}
+.cdn{font-family:var(--fd);font-size:54px;font-weight:700;color:var(--t1);line-height:1;letter-spacing:-2px;display:block;transition:color .3s}
+.dk .cdn{color:var(--t1)}
+.cdu{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--pk4);display:block;margin-top:3px}
+.cd-dot{font-family:var(--fd);font-size:40px;color:var(--pk2);padding-top:5px;line-height:1;font-weight:300;align-self:flex-start}
+
+/* PROGRESS */
+.cd-prog-row{display:flex;justify-content:space-between;font-size:11px;font-weight:600;color:var(--t2);margin-bottom:6px}
+.cd-prog-track{height:6px;background:rgba(244,143,177,.25);border-radius:3px;overflow:hidden}
+.cd-prog-fill{height:100%;background:linear-gradient(90deg,var(--pk3),var(--pk5));border-radius:3px;transition:width .8s ease;width:0%}
+.cd-motto{text-align:center;font-family:var(--fd);font-size:13.5px;font-style:italic;color:var(--pk5);margin-top:12px;line-height:1.4}
+
+/* TODAY CARD */
+.today-card{background:var(--white);border:1px solid var(--b200);border-radius:var(--r);padding:16px;box-shadow:var(--sh);transition:background .3s,border-color .3s}
+.today-card-title{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--t3);margin-bottom:12px}
+.today-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--b100)}
+.today-item:last-child{border-bottom:none}
+.today-pip{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.today-body{flex:1;min-width:0}
+.today-name{font-size:14px;font-weight:700;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.today-time{font-size:12px;color:var(--t2);margin-top:1px;font-weight:500}
+.today-empty{text-align:center;padding:18px 0;color:var(--t3);font-size:13px;font-weight:500}
+
+/* ─── TIMETABLE PAGE ─── */
+.tt-wrap{padding:0 16px}
+
+/* DAY STRIP */
+.day-strip{display:flex;gap:6px;padding:14px 16px 10px;overflow-x:auto;scrollbar-width:none}
+.day-strip::-webkit-scrollbar{display:none}
+.dtab{flex-shrink:0;min-width:52px;border-radius:20px;border:1.5px solid var(--b200);background:transparent;font-family:var(--fb);cursor:pointer;transition:all .18s;text-align:center;padding:6px 8px}
+.dtab-d{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;display:block}
+.dtab-c{font-size:14px;font-weight:800;color:var(--t1);display:block;margin-top:1px}
+.dtab.active{background:var(--pk5);border-color:var(--pk5);box-shadow:0 3px 12px rgba(233,30,140,.3)}
+.dtab.active .dtab-d,.dtab.active .dtab-c{color:#fff}
+.dtab.today:not(.active){border-color:var(--pk3)}
+.dtab.today:not(.active) .dtab-d{color:var(--pk4)}
+
+/* SESSIONS */
+.slots-list{display:flex;flex-direction:column;gap:8px}
+
+.tuit-block{background:var(--pk1);border:1.5px dashed var(--pk3);border-radius:var(--r);padding:12px 14px;display:flex;align-items:center;gap:10px}
+.dk .tuit-block{background:var(--pk1);border-color:var(--b300)}
+.tuit-icon{font-size:18px;flex-shrink:0}
+.tuit-info{flex:1;min-width:0}
+.tuit-name{font-size:13px;font-weight:700;color:var(--pk6)}
+.dk .tuit-name{color:var(--pk3)}
+.tuit-time{font-size:12px;color:var(--pk4);font-weight:600;margin-top:1px}
+.tuit-badge{font-size:10px;font-weight:800;background:var(--pk2);color:var(--pk6);padding:2px 8px;border-radius:20px;flex-shrink:0;white-space:nowrap}
+.dk .tuit-badge{background:var(--b200);color:var(--pk3)}
+
+.slot-card{background:var(--white);border:1.5px solid var(--b200);border-radius:var(--r);padding:13px 14px;display:flex;align-items:center;gap:11px;box-shadow:var(--sh);cursor:pointer;transition:all .18s;animation:slin .22s ease;position:relative;overflow:hidden}
+.slot-card:active{transform:scale(.98)}
+@keyframes slin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.slot-pip{width:4px;border-radius:3px;flex-shrink:0;align-self:stretch;min-height:38px}
+.slot-body{flex:1;min-width:0}
+.slot-name{font-size:14.5px;font-weight:700;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.slot-meta{display:flex;align-items:center;gap:7px;margin-top:3px;flex-wrap:wrap}
+.slot-time{font-size:12px;color:var(--t2);font-weight:600}
+.slot-type{font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px}
+.slot-note{font-size:12px;color:var(--t3);font-style:italic;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.slot-edit{width:30px;height:30px;border-radius:8px;border:none;background:var(--b100);color:var(--t2);display:flex;align-items:center;justify-content:center;font-size:15px;cursor:pointer;flex-shrink:0;transition:all .15s}
+.slot-edit:hover{background:var(--pk1);color:var(--pk5)}
+
+.wd-notice{background:var(--pk1);border:1.5px solid var(--pk2);border-radius:var(--rsm);padding:10px 13px;font-size:12.5px;color:var(--pk6);font-weight:600;display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.dk .wd-notice{background:var(--pk1);color:var(--pk3)}
+
+.add-btn{width:100%;padding:13px;border-radius:var(--r);border:2px dashed var(--b200);background:transparent;font-family:var(--fb);font-size:13.5px;font-weight:700;color:var(--t2);cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:7px;margin-top:8px}
+.add-btn:hover{border-color:var(--pk3);color:var(--pk5);background:var(--pk1)}
+
+.empty-day{text-align:center;padding:36px 20px;color:var(--t3)}
+.empty-day-icon{font-size:44px;margin-bottom:10px;opacity:.5}
+.empty-day p{font-size:13.5px;font-weight:600;line-height:1.6}
+
+/* ─── SETTINGS PAGE ─── */
+.st-wrap{padding:16px 16px 0}
+.st-section{margin-bottom:22px}
+.st-stitle{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--t3);margin-bottom:8px;padding-left:2px}
+.st-group{background:var(--white);border:1px solid var(--b200);border-radius:var(--r);overflow:hidden;box-shadow:var(--sh);transition:background .3s,border-color .3s}
+.st-row{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--b100);cursor:pointer;transition:background .15s;gap:12px}
+.st-row:last-child{border-bottom:none}
+.st-row:hover{background:var(--b100)}
+.st-row-l{display:flex;align-items:center;gap:12px}
+.st-ic{width:36px;height:36px;border-radius:10px;background:var(--pk1);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.st-name{font-size:14px;font-weight:700;color:var(--t1)}
+.st-desc{font-size:12px;color:var(--t2);margin-top:1px}
+.st-arr{font-size:20px;color:var(--t3)}
+
+.tgl{width:44px;height:26px;position:relative;flex-shrink:0;cursor:pointer}
+.tgl input{opacity:0;width:0;height:0;position:absolute}
+.tgl-tr{position:absolute;inset:0;border-radius:13px;background:var(--b300);transition:background .2s;cursor:pointer}
+.tgl input:checked+.tgl-tr{background:var(--pk5)}
+.tgl-tr::after{content:'';position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:50%;background:white;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:transform .22s cubic-bezier(.4,0,.2,1)}
+.tgl input:checked+.tgl-tr::after{transform:translateX(18px)}
+
+/* ─── MODAL ─── */
+.mbk{position:fixed;inset:0;background:rgba(20,5,14,.5);z-index:500;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.mbk.open{opacity:1;pointer-events:auto}
+.modal{background:var(--white);border-radius:26px 26px 0 0;padding:20px 20px calc(20px + var(--safe));width:100%;max-width:430px;max-height:91dvh;overflow-y:auto;transform:translateY(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);transition:background .3s}
+.modal::-webkit-scrollbar{display:none}
+.mbk.open .modal{transform:translateY(0)}
+@media(min-width:432px){.mbk{align-items:center}.modal{border-radius:24px;margin-bottom:24px}}
+.mpill{width:36px;height:4px;border-radius:2px;background:var(--b200);margin:0 auto 18px}
+.mtitle{font-family:var(--fd);font-size:22px;font-weight:600;color:var(--t1);margin-bottom:2px}
+.msub{font-size:12.5px;color:var(--t2);margin-bottom:20px}
+
+/* FORM */
+.fg{margin-bottom:15px}
+.fl{display:block;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--t3);margin-bottom:6px}
+.fi,.fsel,.fta{width:100%;padding:11px 14px;border:1.5px solid var(--b200);border-radius:var(--rsm);background:var(--surface);color:var(--t1);font-family:var(--fb);font-size:14px;outline:none;transition:border .15s,background .15s;-webkit-appearance:none;appearance:none}
+.fi:focus,.fsel:focus,.fta:focus{border-color:var(--pk5);background:var(--white);box-shadow:0 0 0 3px rgba(233,30,140,.1)}
+.fta{min-height:68px;resize:none;line-height:1.5}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* SWATCHES */
+.swatch-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:2px}
+.swatch{width:32px;height:32px;border-radius:50%;cursor:pointer;border:2.5px solid transparent;transition:all .15s}
+.swatch.sel{border-color:var(--t1);transform:scale(1.18)}
+
+/* TYPE CHIPS */
+.type-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:2px}
+.tchip{padding:6px 12px;border-radius:20px;border:1.5px solid var(--b200);background:transparent;font-family:var(--fb);font-size:12px;font-weight:700;color:var(--t2);cursor:pointer;transition:all .15s}
+.tchip.sel{background:var(--pk5);border-color:var(--pk5);color:#fff}
+
+/* BUTTONS */
+.btn-p{width:100%;padding:14px;border-radius:var(--rsm);background:linear-gradient(135deg,var(--pk4),var(--pk5));color:#fff;border:none;font-family:var(--fb);font-size:15px;font-weight:800;cursor:pointer;transition:all .18s;box-shadow:0 4px 16px rgba(233,30,140,.3);margin-top:4px}
+.btn-p:hover{transform:translateY(-1px);box-shadow:0 6px 22px rgba(233,30,140,.38)}
+.btn-p:active{transform:none}
+.btn-s{width:100%;padding:12px;border-radius:var(--rsm);background:transparent;color:var(--t2);border:1.5px solid var(--b200);font-family:var(--fb);font-size:14px;font-weight:700;cursor:pointer;transition:all .15s;margin-top:8px}
+.btn-s:hover{border-color:var(--pk3);color:var(--pk5)}
+.btn-d{width:100%;padding:12px;border-radius:var(--rsm);background:#FFEBEE;color:#C62828;border:none;font-family:var(--fb);font-size:14px;font-weight:700;cursor:pointer;transition:all .15s;margin-top:8px}
+.btn-d:hover{background:#FFCDD2}
+
+/* WARN BOX */
+.warnbox{background:#FFF8E1;border:1.5px solid #FFCA28;border-radius:var(--rsm);padding:10px 13px;font-size:12.5px;color:#7B5800;font-weight:600;display:flex;align-items:flex-start;gap:8px;margin-bottom:12px}
+
+/* ─── TOAST ─── */
+.toast{position:fixed;bottom:calc(var(--navH) + var(--safe) + 14px);left:50%;transform:translateX(-50%) translateY(12px);background:var(--t1);color:var(--white);padding:10px 20px;border-radius:24px;font-size:13px;font-weight:700;z-index:900;opacity:0;transition:all .25s;white-space:nowrap;pointer-events:none;max-width:90vw;text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ═══ PAGES ═══ -->
+  <div class="pages">
+
+    <!-- COUNTDOWN -->
+    <div class="page active" id="pg-countdown">
+      <div class="ph">
+        <div class="ph-title">SPM <i>Countdown</i></div>
+        <div class="ph-sub">9 November 2026 · You can do this, Magiisha 🌸</div>
+      </div>
+      <div class="cd-wrap" style="padding-top:16px">
+        <!-- HERO -->
+        <div class="hero">
+          <div class="hero-label">🎯 SPM 2026 — Straight A+</div>
+          <div class="cd-digits">
+            <div class="cd-unit">
+              <span class="cdn" id="cdDays">---</span>
+              <span class="cdu">Days</span>
+            </div>
+            <div class="cd-dot">·</div>
+            <div class="cd-unit">
+              <span class="cdn" id="cdWeeks">--</span>
+              <span class="cdu">Weeks</span>
+            </div>
+            <div class="cd-dot">·</div>
+            <div class="cd-unit">
+              <span class="cdn" id="cdMonths">--</span>
+              <span class="cdu">Months</span>
+            </div>
+          </div>
+          <div class="cd-prog-row">
+            <span id="cdStartLabel">Day 1 🌱</span>
+            <span id="cdPct">calculating…</span>
+            <span>9 Nov 2026 🏁</span>
+          </div>
+          <div class="cd-prog-track">
+            <div class="cd-prog-fill" id="cdBar"></div>
+          </div>
+          <div class="cd-motto" id="cdMotto">Every day you show up is a day closer to A+</div>
+        </div>
+
+        <!-- TODAY -->
+        <div class="today-card">
+          <div class="today-card-title">Today's Schedule</div>
+          <div id="todayList"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TIMETABLE -->
+    <div class="page" id="pg-timetable">
+      <div class="ph">
+        <div class="ph-title">My <i>Timetable</i></div>
+        <div class="ph-sub">Weekdays after 6 PM · Tuition auto-blocked</div>
+      </div>
+      <div class="day-strip" id="dayStrip"></div>
+      <div class="tt-wrap">
+        <div id="slotsContainer"></div>
+        <button class="add-btn" id="addSlotBtn" onclick="openAdd()">＋ Add study session</button>
+        <button class="add-btn" onclick="openAddTuitionForDay()" style="margin-top:6px;border-color:var(--pk3);color:var(--pk4)">🎓 Add tuition block</button>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="page" id="pg-settings">
+      <div class="ph">
+        <div class="ph-title">Set<i>tings</i></div>
+        <div class="ph-sub">Personalise your planner</div>
+      </div>
+      <div class="st-wrap">
+
+        <div class="st-section">
+          <div class="st-stitle">Appearance</div>
+          <div class="st-group">
+            <div class="st-row" onclick="toggleDark()">
+              <div class="st-row-l">
+                <div class="st-ic">🌙</div>
+                <div><div class="st-name">Dark Mode</div><div class="st-desc">Soft dark pink theme</div></div>
+              </div>
+              <label class="tgl" onclick="event.stopPropagation()">
+                <input type="checkbox" id="darkTog" onchange="toggleDark()">
+                <div class="tgl-tr"></div>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="st-section">
+          <div class="st-stitle">Tuition Schedule</div>
+          <div class="st-group">
+            <div class="st-row" onclick="openAddTuition()" style="cursor:pointer">
+              <div class="st-row-l"><div class="st-ic">➕</div><div><div class="st-name">Add Tuition Class</div><div class="st-desc">Block a new tuition time</div></div></div>
+              <span class="st-arr">›</span>
+            </div>
+          </div>
+          <div id="tuitionSettList" style="margin-top:8px;display:flex;flex-direction:column;gap:6px"></div>
+        </div>
+
+        <div class="st-section">
+          <div class="st-stitle">Data</div>
+          <div class="st-group">
+            <div class="st-row" onclick="doExport()">
+              <div class="st-row-l"><div class="st-ic">📤</div><div><div class="st-name">Export Backup</div><div class="st-desc">Download your data as JSON</div></div></div>
+              <span class="st-arr">›</span>
+            </div>
+            <div class="st-row" onclick="document.getElementById('importFile').click()">
+              <div class="st-row-l"><div class="st-ic">📥</div><div><div class="st-name">Import Backup</div><div class="st-desc">Restore from a saved file</div></div></div>
+              <span class="st-arr">›</span>
+            </div>
+            <div class="st-row" onclick="doClear()">
+              <div class="st-row-l"><div class="st-ic" style="background:#FFEBEE">🗑️</div><div><div class="st-name" style="color:#C62828">Clear Sessions</div><div class="st-desc">Remove all study slots</div></div></div>
+              <span class="st-arr">›</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="st-section">
+          <div class="st-stitle">About</div>
+          <div class="st-group">
+            <div class="st-row" style="cursor:default">
+              <div class="st-row-l"><div class="st-ic">🌸</div><div><div class="st-name">Bloom SPM Planner</div><div class="st-desc">Built for Magiisha · SPM Nov 9, 2026</div></div></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ BOTTOM NAV ═══ -->
+  <nav class="bnav" id="bnav">
+    <button class="nbtn active" id="nb0" onclick="goPage('countdown')">
+      <span class="nico">⏰</span>
+      <span class="nlb">Countdown</span>
+    </button>
+    <button class="nbtn" id="nb1" onclick="goPage('timetable')">
+      <span class="nico">📅</span>
+      <span class="nlb">Timetable</span>
+    </button>
+    <button class="nbtn" id="nb2" onclick="goPage('settings')">
+      <span class="nico">⚙️</span>
+      <span class="nlb">Settings</span>
+    </button>
+  </nav>
+</div>
+
+<!-- ═══ MODAL: ADD / EDIT SLOT ═══ -->
+<div class="mbk" id="modalSlot" onclick="bkClose('modalSlot',event)">
+  <div class="modal">
+    <div class="mpill"></div>
+    <div class="mtitle" id="mSlotTitle">Add Study Session</div>
+    <div class="msub" id="mSlotSub">Fill in the details below</div>
+    <input type="hidden" id="mSlotId">
+
+    <div class="fg">
+      <label class="fl">Subject</label>
+      <select class="fsel" id="mSubj"></select>
+    </div>
+
+    <div class="fg">
+      <label class="fl">Study Type</label>
+      <div class="type-row" id="typeRow"></div>
+    </div>
+
+    <div class="frow">
+      <div class="fg">
+        <label class="fl">Start Time</label>
+        <input type="time" class="fi" id="mStart" value="18:30">
+      </div>
+      <div class="fg">
+        <label class="fl">End Time</label>
+        <input type="time" class="fi" id="mEnd" value="20:00">
+      </div>
+    </div>
+
+    <div class="fg">
+      <label class="fl">Notes (optional)</label>
+      <textarea class="fta" id="mNote" placeholder="Chapter 3, past papers, key formulas…"></textarea>
+    </div>
+
+    <div class="fg">
+      <label class="fl">Colour</label>
+      <div class="swatch-row" id="swatchRow"></div>
+    </div>
+
+    <div class="warnbox" id="conflictWarn" style="display:none">
+      ⚠️ <span id="conflictText">This time conflicts with a tuition class.</span>
+    </div>
+
+    <button class="btn-p" onclick="saveSlot()">Save Session</button>
+    <button class="btn-d" id="delBtn" onclick="delSlot()" style="display:none">Delete Session</button>
+    <button class="btn-s" onclick="closeM('modalSlot')">Cancel</button>
+  </div>
+</div>
+
+<!-- ═══ MODAL: ADD / EDIT TUITION ═══ -->
+<div class="mbk" id="modalTuition" onclick="bkClose('modalTuition',event)">
+  <div class="modal">
+    <div class="mpill"></div>
+    <div class="mtitle" id="mTuitTitle">Add Tuition Class</div>
+    <div class="msub">This block will be shown and protected in your timetable</div>
+    <input type="hidden" id="mTuitId">
+
+    <div class="fg">
+      <label class="fl">Class Name</label>
+      <input type="text" class="fi" id="mTuitName" placeholder="e.g. Tuition (Prem), English Tuition…">
+    </div>
+
+    <div class="fg">
+      <label class="fl">Day</label>
+      <select class="fsel" id="mTuitDay">
+        <option value="0">Sunday</option>
+        <option value="1">Monday</option>
+        <option value="2">Tuesday</option>
+        <option value="3">Wednesday</option>
+        <option value="4">Thursday</option>
+        <option value="5">Friday</option>
+        <option value="6">Saturday</option>
+      </select>
+    </div>
+
+    <div class="frow">
+      <div class="fg">
+        <label class="fl">Start Time</label>
+        <input type="time" class="fi" id="mTuitStart" value="18:00">
+      </div>
+      <div class="fg">
+        <label class="fl">End Time</label>
+        <input type="time" class="fi" id="mTuitEnd" value="20:00">
+      </div>
+    </div>
+
+    <button class="btn-p" onclick="saveTuition()">Save Tuition Class</button>
+    <button class="btn-d" id="delTuitBtn" onclick="delTuition()" style="display:none">Delete Tuition Class</button>
+    <button class="btn-s" onclick="closeM('modalTuition')">Cancel</button>
+  </div>
+</div>
+
+<input type="file" id="importFile" accept=".json" style="display:none" onchange="doImport(event)">
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+
+/* ═══════════════════════════════════════
+   CONSTANTS
+═══════════════════════════════════════ */
+const SPM_DATE   = new Date('2026-11-09T08:00:00');
+// Progress start = the very first day the app is opened (saved to localStorage)
+// 0% on that first day, grows daily, hits 100% on 9 Nov 2026
+
+const DAYS_FULL  = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const DAYS_SHORT = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+/* 0=Sun,1=Mon,2=Tue,3=Wed,4=Thu,5=Fri,6=Sat */
+const DEFAULT_TUITION = [
+  {id:101, day:0, name:'Tuition (Prem)',    start:'10:30', end:'12:30'},
+  {id:102, day:0, name:'Tuition (Prem)',    start:'16:30', end:'18:00'},
+  {id:103, day:1, name:'Tuition (Prem)',    start:'18:00', end:'19:30'},
+  {id:104, day:2, name:'Tuition (Nirvana)', start:'20:00', end:'22:00'},
+  {id:105, day:5, name:'Tuition (Prem)',    start:'08:00', end:'10:00'},
+  {id:106, day:6, name:'English Tuition',   start:'15:00', end:'17:00'},
+  {id:107, day:6, name:'Tuition (Prem)',    start:'20:00', end:'22:00'},
+];
+
+const SUBJECTS = [
+  'Bahasa Melayu','English','Sejarah','Moral',
+  'Mathematics','Additional Mathematics','Physics','Chemistry','Biology'
+];
+
+const TYPES = ['Concept Revision','Past Papers','Active Recall','Practice Qs','Memorisation'];
+
+const SUBJ_COLORS = {
+  'Bahasa Melayu':'#E91E8C','English':'#5C6BC0','Sejarah':'#FFA726',
+  'Moral':'#AB47BC','Mathematics':'#26A69A','Additional Mathematics':'#29B6F6',
+  'Physics':'#F06292','Chemistry':'#EF5350','Biology':'#66BB6A'
+};
+
+const PALETTE = [
+  '#E91E8C','#F06292','#AB47BC','#5C6BC0','#29B6F6',
+  '#26A69A','#FFA726','#EF5350','#66BB6A','#FF7043'
+];
+
+const MOTTOS = [
+  'Every day you show up is a day closer to A+',
+  'Consistency beats intensity every time',
+  'You are building something great — keep going',
+  'The effort today is the result in November',
+  'Small steps daily → Straight A+ in November',
+  'Study hard now so future you can celebrate 🎉',
+  'Progress over perfection — always',
+];
+
+/* ═══════════════════════════════════════
+   STATE
+═══════════════════════════════════════ */
+const STORE = 'bloom-spm-v4';
+
+function fresh() {
+  return { slots:{0:[],1:[],2:[],3:[],4:[],5:[],6:[]}, tuition: JSON.parse(JSON.stringify(DEFAULT_TUITION)), dark:false, nid:200 };
+}
+
+let S = (function(){
+  try {
+    const raw = localStorage.getItem(STORE);
+    if (raw) {
+      const d = JSON.parse(raw);
+      for (let i=0;i<7;i++) if (!d.slots[i]) d.slots[i]=[];
+      // Migrate: if old data has no tuition array, seed with defaults
+      if (!d.tuition) d.tuition = JSON.parse(JSON.stringify(DEFAULT_TUITION));
+      return d;
+    }
+  } catch(e){}
+  return fresh();
+})();
+
+function persist() { localStorage.setItem(STORE, JSON.stringify(S)); }
+
+/* ═══════════════════════════════════════
+   NAVIGATION
+═══════════════════════════════════════ */
+let curPage = 'countdown';
+
+function goPage(name) {
+  // hide all pages
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  // show target
+  document.getElementById('pg-' + name).classList.add('active');
+  // update nav buttons
+  const map = {countdown:0, timetable:1, settings:2};
+  const idx = map[name];
+  for (let i=0;i<3;i++) {
+    document.getElementById('nb'+i).classList.toggle('active', i===idx);
+  }
+  curPage = name;
+  // render
+  if (name === 'countdown') renderCountdown();
+  else if (name === 'timetable') renderTimetable();
+  else if (name === 'settings') renderSettings();
+}
+
+/* ═══════════════════════════════════════
+   COUNTDOWN
+═══════════════════════════════════════ */
+let cdTick = null;
+
+function renderCountdown() {
+  if (cdTick) clearInterval(cdTick);
+  tickNow();
+  cdTick = setInterval(tickNow, 1000); // tick every second
+  renderToday();
+  const mottoEl = document.getElementById('cdMotto');
+  if (mottoEl) mottoEl.textContent = MOTTOS[new Date().getDate() % MOTTOS.length];
+}
+
+function tickNow() {
+  const now  = new Date();
+  const diff = SPM_DATE - now;
+
+  const dEl = document.getElementById('cdDays');
+  const wEl = document.getElementById('cdWeeks');
+  const mEl = document.getElementById('cdMonths');
+  const bEl = document.getElementById('cdBar');
+  const pEl = document.getElementById('cdPct');
+
+  if (!dEl) return; // page not in DOM
+
+  if (diff <= 0) {
+    dEl.textContent = '0';
+    wEl.textContent = '0';
+    mEl.textContent = '0';
+    if (bEl) bEl.style.width = '100%';
+    if (pEl) pEl.textContent = '100% — SPM is here! 🎉';
+    return;
+  }
+
+  const days   = Math.floor(diff / 86400000);
+  const weeks  = Math.floor(days / 7);
+  const months = Math.floor(days / 30.44);
+
+  dEl.textContent = days.toLocaleString();
+  wEl.textContent = weeks;
+  mEl.textContent = months;
+
+  // Progress
+  const startMs   = parseInt(localStorage.getItem('bloom-start') || '0');
+  const startDate = startMs ? new Date(startMs) : now;
+  if (!startMs) localStorage.setItem('bloom-start', now.getTime().toString());
+
+  // Update start label with actual first-open date
+  const slEl = document.getElementById('cdStartLabel');
+  if (slEl) {
+    const opts = {day:'numeric', month:'short'};
+    slEl.textContent = (startMs ? new Date(startMs) : now).toLocaleDateString('en-MY', opts) + ' 🌱';
+  }
+
+  const totalWindow = SPM_DATE - startDate;          // ms from first open → SPM
+  const elapsedMs   = now - startDate;               // ms since first open
+  const nearPct     = totalWindow > 0
+    ? Math.max(0, Math.min(100, (elapsedMs / totalWindow) * 100))
+    : 0;
+
+  if (bEl) bEl.style.width = nearPct.toFixed(1) + '%';
+  if (pEl) pEl.textContent = nearPct.toFixed(1) + '% of journey to SPM 🌸';
+}
+
+function renderToday() {
+  const todayJS = new Date().getDay(); // 0=Sun
+  const slots   = (S.slots[todayJS] || []).slice().sort((a,b) => a.start.localeCompare(b.start));
+  const tuits   = S.tuition.filter(t => t.day === todayJS);
+
+  const all = [
+    ...tuits.map(t  => ({isTuition:true,  name:t.name,    start:t.start, end:t.end,   sortKey:t.start})),
+    ...slots.map(sl => ({isTuition:false, name:sl.subject, start:sl.start, end:sl.end, type:sl.type, color:sl.color, sortKey:sl.start}))
+  ].sort((a,b) => a.sortKey.localeCompare(b.sortKey));
+
+  const el = document.getElementById('todayList');
+  if (!el) return;
+
+  if (all.length === 0) {
+    el.innerHTML = '<div class="today-empty">🌸 No sessions today. Rest or add one in Timetable!</div>';
+    return;
+  }
+
+  el.innerHTML = all.map(item => {
+    const pip   = item.isTuition ? '#F48FB1' : (item.color || '#E91E8C');
+    const label = item.isTuition ? '🎓 ' + item.name : item.name;
+    const sub   = item.start + ' – ' + item.end + (item.isTuition ? ' · Tuition' : (' · ' + (item.type || 'Study')));
+    return `<div class="today-item">
+      <div class="today-pip" style="background:${pip}"></div>
+      <div class="today-body">
+        <div class="today-name">${esc(label)}</div>
+        <div class="today-time">${sub}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ═══════════════════════════════════════
+   TIMETABLE
+═══════════════════════════════════════ */
+let activeDay = new Date().getDay(); // 0=Sun
+
+function renderTimetable() {
+  renderDayStrip();
+  renderSlots();
+}
+
+function renderDayStrip() {
+  const todayJS = new Date().getDay();
+  const strip   = document.getElementById('dayStrip');
+  if (!strip) return;
+
+  strip.innerHTML = DAYS_SHORT.map((ds, i) => {
+    const cnt     = (S.slots[i] || []).length;
+    const isToday = i === todayJS;
+    const isAct   = i === activeDay;
+    return `<button class="dtab${isAct?' active':''}${isToday&&!isAct?' today':''}"
+      onclick="setDay(${i})">
+      <span class="dtab-d">${ds}</span>
+      <span class="dtab-c">${cnt > 0 ? cnt+'✦' : '—'}</span>
+    </button>`;
+  }).join('');
+}
+
+function setDay(d) {
+  activeDay = d;
+  renderDayStrip();
+  renderSlots();
+}
+
+function renderSlots() {
+  const cont     = document.getElementById('slotsContainer');
+  const addBtn   = document.getElementById('addSlotBtn');
+  if (!cont) return;
+
+  const tuits    = S.tuition.filter(t => t.day === activeDay).sort((a,b)=>a.start.localeCompare(b.start));
+  const mySlots  = (S.slots[activeDay] || []).slice().sort((a,b)=>a.start.localeCompare(b.start));
+  const isWeekday = activeDay >= 1 && activeDay <= 5;
+
+  // Merge
+  const all = [
+    ...tuits.map(t  => ({...t, isTuition:true,  sk:t.start})),
+    ...mySlots.map(s => ({...s, isTuition:false, sk:s.start}))
+  ].sort((a,b) => a.sk.localeCompare(b.sk));
+
+  let html = '';
+
+  if (isWeekday) {
+    html += `<div class="wd-notice">ℹ️ Weekday — study sessions only after 6:00 PM</div>`;
+  }
+
+  if (all.length === 0) {
+    html += `<div class="empty-day">
+      <div class="empty-day-icon">📚</div>
+      <p>No sessions for ${DAYS_FULL[activeDay]}.<br>Tap "Add study session" below!</p>
+    </div>`;
+  } else {
+    html += '<div class="slots-list">';
+    all.forEach(item => {
+      if (item.isTuition) {
+        html += `<div class="tuit-block" onclick="openEditTuition(${item.id})" style="cursor:pointer">
+          <div class="tuit-icon">🎓</div>
+          <div class="tuit-info">
+            <div class="tuit-name">${esc(item.name)}</div>
+            <div class="tuit-time">⏰ ${item.start} – ${item.end}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <div class="tuit-badge">Tuition</div>
+            <button class="slot-edit" onclick="openEditTuition(${item.id});event.stopPropagation()" aria-label="Edit tuition">✏️</button>
+          </div>
+        </div>`;
+      } else {
+        const c = item.color || SUBJ_COLORS[item.subject] || '#E91E8C';
+        html += `<div class="slot-card" onclick="openEdit(${item.id})">
+          <div class="slot-pip" style="background:${c}"></div>
+          <div class="slot-body">
+            <div class="slot-name">${esc(item.subject)}</div>
+            <div class="slot-meta">
+              <span class="slot-time">⏰ ${item.start} – ${item.end}</span>
+              <span class="slot-type" style="background:${c}22;color:${c}">${esc(item.type||'Study')}</span>
+            </div>
+            ${item.note ? `<div class="slot-note">📝 ${esc(item.note)}</div>` : ''}
+          </div>
+          <button class="slot-edit" onclick="openEdit(${item.id});event.stopPropagation()" aria-label="Edit">✏️</button>
+        </div>`;
+      }
+    });
+    html += '</div>';
+  }
+
+  cont.innerHTML = html;
+}
+
+/* ═══════════════════════════════════════
+   ADD / EDIT SLOT
+═══════════════════════════════════════ */
+let selColor = '#E91E8C';
+let selType  = 'Concept Revision';
+
+function openAdd() {
+  const isWD = activeDay >= 1 && activeDay <= 5;
+  document.getElementById('mSlotTitle').textContent = 'Add Session — ' + DAYS_FULL[activeDay];
+  document.getElementById('mSlotSub').textContent   = isWD
+    ? 'Weekdays: sessions must start at 6:00 PM or later'
+    : 'Weekend: any time is fine';
+  document.getElementById('mSlotId').value  = '';
+  document.getElementById('mStart').value   = isWD ? '18:30' : '09:00';
+  document.getElementById('mEnd').value     = isWD ? '20:00' : '11:00';
+  document.getElementById('mNote').value    = '';
+  document.getElementById('delBtn').style.display   = 'none';
+  document.getElementById('conflictWarn').style.display = 'none';
+
+  selColor = SUBJ_COLORS[SUBJECTS[0]] || '#E91E8C';
+  selType  = 'Concept Revision';
+  buildSubjSel('');
+  buildTypeChips();
+  buildSwatches();
+  openM('modalSlot');
+}
+
+function openEdit(id) {
+  const slot = (S.slots[activeDay] || []).find(x => x.id === id);
+  if (!slot) return;
+  document.getElementById('mSlotTitle').textContent = 'Edit Session';
+  document.getElementById('mSlotSub').textContent   = DAYS_FULL[activeDay];
+  document.getElementById('mSlotId').value  = id;
+  document.getElementById('mStart').value   = slot.start;
+  document.getElementById('mEnd').value     = slot.end;
+  document.getElementById('mNote').value    = slot.note || '';
+  document.getElementById('delBtn').style.display   = '';
+  document.getElementById('conflictWarn').style.display = 'none';
+
+  selColor = slot.color || SUBJ_COLORS[slot.subject] || '#E91E8C';
+  selType  = slot.type  || 'Concept Revision';
+  buildSubjSel(slot.subject);
+  buildTypeChips();
+  buildSwatches();
+  openM('modalSlot');
+}
+
+function buildSubjSel(cur) {
+  const el = document.getElementById('mSubj');
+  el.innerHTML = SUBJECTS.map(s =>
+    `<option value="${s}"${s===cur?' selected':''}>${s}</option>`
+  ).join('');
+  el.onchange = function() {
+    selColor = SUBJ_COLORS[this.value] || selColor;
+    buildSwatches();
+  };
+}
+
+function buildTypeChips() {
+  document.getElementById('typeRow').innerHTML = TYPES.map(t =>
+    `<button type="button" class="tchip${t===selType?' sel':''}" onclick="pickType('${t}')">${t}</button>`
+  ).join('');
+}
+
+function buildSwatches() {
+  document.getElementById('swatchRow').innerHTML = PALETTE.map(c =>
+    `<div class="swatch${c===selColor?' sel':''}" style="background:${c}" onclick="pickColor('${c}')"></div>`
+  ).join('');
+}
+
+function pickType(t) { selType = t; buildTypeChips(); }
+function pickColor(c) { selColor = c; buildSwatches(); }
+
+function saveSlot() {
+  const start = document.getElementById('mStart').value;
+  const end   = document.getElementById('mEnd').value;
+  const subj  = document.getElementById('mSubj').value;
+  const note  = document.getElementById('mNote').value.trim();
+  const eid   = parseInt(document.getElementById('mSlotId').value) || 0;
+  const isWD  = activeDay >= 1 && activeDay <= 5;
+
+  if (!start || !end)             { showToast('Please set start and end time'); return; }
+  if (t2m(end) <= t2m(start))    { showToast('End time must be after start time'); return; }
+  if (isWD && t2m(start)<t2m('18:00')) { showToast('Weekday sessions must start at 6:00 PM or later ⏰'); return; }
+
+  // Conflict check against current tuition list
+  const conflict = S.tuition.find(t => {
+    if (t.day !== activeDay) return false;
+    return t2m(start) < t2m(t.end) && t2m(end) > t2m(t.start);
+  });
+  if (conflict) {
+    document.getElementById('conflictWarn').style.display = 'flex';
+    document.getElementById('conflictText').textContent =
+      `Conflicts with "${conflict.name}" (${conflict.start}–${conflict.end}). Choose a different time.`;
+    return;
+  }
+  document.getElementById('conflictWarn').style.display = 'none';
+
+  if (!S.slots[activeDay]) S.slots[activeDay] = [];
+
+  if (eid) {
+    const idx = S.slots[activeDay].findIndex(x => x.id === eid);
+    if (idx >= 0) {
+      S.slots[activeDay][idx] = { id:eid, subject:subj, start, end, note, color:selColor, type:selType };
+    }
+    showToast('Session updated ✓');
+  } else {
+    S.slots[activeDay].push({ id:S.nid++, subject:subj, start, end, note, color:selColor, type:selType });
+    showToast('Session added ✓');
+  }
+
+  persist();
+  closeM('modalSlot');
+  renderDayStrip();
+  renderSlots();
+  if (curPage === 'countdown') renderToday();
+}
+
+function delSlot() {
+  const eid = parseInt(document.getElementById('mSlotId').value);
+  S.slots[activeDay] = (S.slots[activeDay] || []).filter(x => x.id !== eid);
+  persist();
+  closeM('modalSlot');
+  renderDayStrip();
+  renderSlots();
+  if (curPage === 'countdown') renderToday();
+  showToast('Session removed');
+}
+
+/* ═══════════════════════════════════════
+   SETTINGS
+═══════════════════════════════════════ */
+function renderSettings() {
+  document.getElementById('darkTog').checked = !!S.dark;
+  renderTuitionSettList();
+}
+
+function renderTuitionSettList() {
+  const el = document.getElementById('tuitionSettList');
+  if (!el) return;
+  const sorted = [...S.tuition].sort((a,b) => a.day - b.day || a.start.localeCompare(b.start));
+  if (sorted.length === 0) {
+    el.innerHTML = `<div style="text-align:center;padding:16px;color:var(--t3);font-size:13px;font-weight:600">No tuition classes added yet</div>`;
+    return;
+  }
+  el.innerHTML = sorted.map(t => `
+    <div style="background:var(--white);border:1px solid var(--b200);border-radius:var(--r);padding:13px 14px;display:flex;align-items:center;gap:10px;box-shadow:var(--sh);cursor:pointer;transition:all .15s" onclick="openEditTuition(${t.id})">
+      <div style="width:36px;height:36px;border-radius:10px;background:var(--pk1);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0">🎓</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:14px;font-weight:700;color:var(--t1)">${esc(t.name)}</div>
+        <div style="font-size:12px;color:var(--t2);margin-top:1px">${DAYS_FULL[t.day]} · ${t.start} – ${t.end}</div>
+      </div>
+      <button style="width:30px;height:30px;border-radius:8px;border:none;background:var(--b100);color:var(--t2);font-size:15px;cursor:pointer;flex-shrink:0;transition:all .15s" onclick="openEditTuition(${t.id});event.stopPropagation()">✏️</button>
+    </div>`).join('');
+}
+
+/* ── TUITION CLASS CRUD ── */
+function openAddTuitionForDay() {
+  openAddTuition();
+  document.getElementById('mTuitDay').value = activeDay;
+  if (activeDay >= 1 && activeDay <= 5) {
+    document.getElementById('mTuitStart').value = '18:00';
+    document.getElementById('mTuitEnd').value   = '20:00';
+  } else {
+    document.getElementById('mTuitStart').value = '09:00';
+    document.getElementById('mTuitEnd').value   = '11:00';
+  }
+}
+
+function openAddTuition() {
+  document.getElementById('mTuitTitle').textContent = 'Add Tuition Class';
+  document.getElementById('mTuitId').value    = '';
+  document.getElementById('mTuitName').value  = '';
+  document.getElementById('mTuitDay').value   = activeDay;
+  document.getElementById('mTuitStart').value = '18:00';
+  document.getElementById('mTuitEnd').value   = '20:00';
+  document.getElementById('delTuitBtn').style.display = 'none';
+  openM('modalTuition');
+}
+
+function openEditTuition(id) {
+  const t = S.tuition.find(x => x.id === id);
+  if (!t) return;
+  document.getElementById('mTuitTitle').textContent  = 'Edit Tuition Class';
+  document.getElementById('mTuitId').value    = id;
+  document.getElementById('mTuitName').value  = t.name;
+  document.getElementById('mTuitDay').value   = t.day;
+  document.getElementById('mTuitStart').value = t.start;
+  document.getElementById('mTuitEnd').value   = t.end;
+  document.getElementById('delTuitBtn').style.display = '';
+  openM('modalTuition');
+}
+
+function saveTuition() {
+  const name  = document.getElementById('mTuitName').value.trim();
+  const day   = parseInt(document.getElementById('mTuitDay').value);
+  const start = document.getElementById('mTuitStart').value;
+  const end   = document.getElementById('mTuitEnd').value;
+  const eid   = parseInt(document.getElementById('mTuitId').value) || 0;
+
+  if (!name)                      { showToast('Please enter a class name'); return; }
+  if (!start || !end)             { showToast('Please set start and end time'); return; }
+  if (t2m(end) <= t2m(start))    { showToast('End time must be after start time'); return; }
+
+  if (eid) {
+    const idx = S.tuition.findIndex(x => x.id === eid);
+    if (idx >= 0) S.tuition[idx] = { id:eid, day, name, start, end };
+    showToast('Tuition updated ✓');
+  } else {
+    S.tuition.push({ id: S.nid++, day, name, start, end });
+    showToast('Tuition added ✓');
+  }
+
+  persist();
+  closeM('modalTuition');
+  // Refresh everywhere
+  renderTuitionSettList();
+  if (curPage === 'timetable') renderTimetable();
+  if (curPage === 'countdown') renderToday();
+}
+
+function delTuition() {
+  const eid = parseInt(document.getElementById('mTuitId').value);
+  S.tuition = S.tuition.filter(x => x.id !== eid);
+  persist();
+  closeM('modalTuition');
+  renderTuitionSettList();
+  if (curPage === 'timetable') renderTimetable();
+  if (curPage === 'countdown') renderToday();
+  showToast('Tuition class removed');
+}
+
+function toggleDark() {
+  S.dark = !S.dark;
+  document.getElementById('darkTog').checked = S.dark;
+  document.getElementById('app').classList.toggle('dk', S.dark);
+  document.body.classList.toggle('dk', S.dark);
+  persist();
+}
+
+function doExport() {
+  const blob = new Blob([JSON.stringify(S, null, 2)], {type:'application/json'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = 'bloom-spm-backup.json'; a.click();
+  URL.revokeObjectURL(url);
+  showToast('Backup exported ✓');
+}
+
+function doImport(e) {
+  const f = e.target.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = function(ev) {
+    try {
+      const d = JSON.parse(ev.target.result);
+      if (!d.slots) throw new Error('bad');
+      S = d;
+      for (let i=0;i<7;i++) if (!S.slots[i]) S.slots[i]=[];
+      persist();
+      goPage(curPage);
+      showToast('Data imported ✓');
+    } catch(err) { showToast('Invalid backup file'); }
+  };
+  r.readAsText(f);
+  e.target.value = '';
+}
+
+function doClear() {
+  if (!confirm('Remove all study sessions? Tuition blocks remain.')) return;
+  for (let i=0;i<7;i++) S.slots[i] = [];
+  persist();
+  renderDayStrip();
+  renderSlots();
+  showToast('All sessions cleared');
+}
+
+/* ═══════════════════════════════════════
+   MODAL HELPERS
+═══════════════════════════════════════ */
+function openM(id)  { document.getElementById(id).classList.add('open'); }
+function closeM(id) { document.getElementById(id).classList.remove('open'); }
+function bkClose(id, e) { if (e.target.id === id) closeM(id); }
+
+/* ═══════════════════════════════════════
+   TOAST
+═══════════════════════════════════════ */
+let toastTmr = null;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTmr);
+  toastTmr = setTimeout(() => el.classList.remove('show'), 2600);
+}
+
+/* ═══════════════════════════════════════
+   UTILS
+═══════════════════════════════════════ */
+function t2m(str) {
+  const parts = str.split(':');
+  return parseInt(parts[0],10)*60 + parseInt(parts[1],10);
+}
+function esc(s) {
+  return String(s)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+/* ═══════════════════════════════════════
+   INIT
+═══════════════════════════════════════ */
+(function init() {
+  // Apply dark mode if saved
+  if (S.dark) {
+    document.getElementById('app').classList.add('dk');
+    document.body.classList.add('dk');
+  }
+  // Kick off countdown page (already active)
+  renderCountdown();
+  // Auto-select today in timetable
+  activeDay = new Date().getDay();
+})();
+</script>
+</body>
+</html>
